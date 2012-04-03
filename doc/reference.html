@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Corduroy: Reference</title>
+	<meta name="generator" content="TextMate http://macromates.com/">
+	<meta name="author" content="Christian Swinehart">
+	
+	<link rel="stylesheet" href="_/css/cords.css" type="text/css" charset="utf-8">
+	<!-- Date: 2012/03/05 -->
+</head>
+<body>
+  <div id="masthead">
+    <img src="_/css/logo.png" usemap="#imap" />
+    <map name="imap"><area shape="rect" coords="0,30,250,85" href="readme.html" /></map>
+  </div>
+  
+  <div id="container">
+    <div class="nav">
+      <div class="home"><a href="readme.html">Corduroy.py</a></div>
+      <div class="controls">
+        <h1>Guide</h1>
+        <ul>
+          <li><a href="guide.html#hello-tornado">Hello Tornado</a></li>
+          <li><a href="guide.html#conventions">Conventions</a></li>
+          <li><a href="guide.html#couches-and-databases">Couches &amp; Databases</a></li>
+          <li><a href="guide.html#documents">Documents</a></li>
+          <li><a href="guide.html#eventual-consistency">Eventual Consistency</a></li>
+          <li><a href="guide.html#views">Views</a></li>
+          <li><a href="guide.html#data-formatters">Data Formatters</a></li>
+          <li><a href="guide.html#replication">Replication</a></li>
+          <li><a href="guide.html#change-notifications">Change Notifications</a></li>
+          <li><a href="guide.html#further-reading">Further Reading</a></li>
+        </ul><br/>
+      
+        <h1>Reference</h1>
+        <ul>
+          <li><a href="#Couch">Couch</a></li>
+          <li><a href="#Database">Database</a></li>
+          <li><a href="#View">View</a></li>
+          <li><a href="#Row">Row</a></li>
+          <li><a href="#Document">Document</a></li>
+          <li><a href="#Status">Status</a></li>
+          <li><a href="#ChangesFeed">ChangesFeed</a></li>
+          <li><a href="#ConflictResolution">ConflictResolution</a></li>
+          <li><a href="#@relax">@relax</a></li>
+          <li><a href="#Exceptions">Exceptions</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="reference">
+
+      <div class="module">
+        <div class="api-class">
+          <h1><div class="prefix">corduroy.</div><a name="Couch">Couch</a></h1>
+          <p>Represents a CouchDB server.</p><p>Useful for creating/deleting DBs and dealing with system-level functionality such
+as replication and task monitoring.</p>
+          <div class="params">
+            
+          </div>
+
+          <ul>
+            <a name="Couch.__init__"></a>
+            <li class="method">
+              <a href="#Couch.__init__"><span class="method-name">__init__</span> <span class="args">(url=<code>None</code>, auth=<code>None</code>, full_commit=<code>True</code>)</span></a>
+              <p>Initialize the server object.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>url</span> (<em>str</em>): url of the couchdb server</li><li class='dedent'><span class='param'>auth</span> (<em>tuple</em>): login information. e.g., ('username', 'password')
+</li>
+                </ul><h3>Kwargs</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>full_commit</span> (<em>bool</em>): include the X-Couch-Full-Commit header
+</li>
+                </ul>
+              </div>
+            </li><a name="Couch.all_dbs"></a>
+            <li class="method">
+              <a href="#Couch.all_dbs"><span class="method-name">all_dbs</span> <span class="args">(callback=<code>None</code>)</span></a>
+              <p>Retrieve the list of database names on this server</p>
+              <div class="params">
+                
+              </div>
+            </li><a name="Couch.config"></a>
+            <li class="method">
+              <a href="#Couch.config"><span class="method-name">config</span> <span class="args">(name=<code>None</code>, value=<code>None</code>, delete=<code>False</code>, callback=<code>None</code>)</span></a>
+              <p>Get/set the configuration of the CouchDB server (or a field thereof).</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>name</span> (<em>str</em>): optional path to a sub-field of the config dict</li><li class='dedent'><span class='param'>value</span> (<em>str,dict,int</em>): optional new value for the path specified by <code>name</code>
+</li>
+                </ul><h3>Kwargs</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>delete</span> (<em>bool</em>): if true, delete the path speficied by <code>name</code>
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>When called without a <code>name</code> arg, returns the entire config dictionary.</li><li>When <code>name</code> is specified, returns the value of that sub-path</li><li>When <code>value</code> is specified, returns None</li><li>When <code>delete</code> is specified, returns the pre-deletion value</li>
+                </ul>
+              </div>
+            </li><a name="Couch.create"></a>
+            <li class="method">
+              <a href="#Couch.create"><span class="method-name">create</span> <span class="args">(name, callback=<code>None</code>)</span></a>
+              <p>Create a new database with the given name.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>name</span> (<em>str</em>): The name of the database to create (without the server's url prefix)
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>Database. An initialized Database object</li>
+                </ul><h3>Raises</h3>
+                <ul>
+                  <li>PreconditionFailed (if the database already exists)</li>
+                </ul>
+              </div>
+            </li><a name="Couch.db"></a>
+            <li class="method">
+              <a href="#Couch.db"><span class="method-name">db</span> <span class="args">(name, create_if_missing=<code>False</code>, callback=<code>None</code>)</span></a>
+              <p>Initialize a Database object corrsponding to a particular db name.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>name</span> (<em>str</em>): The name of the database (without the server's url prefix)</li><li class='dedent'><span class='param'>create_if_missing</span> (<em>bool</em>): If true, will handle NotFound errors by creating
+the database specified by <code>name</code>
+</li>
+                </ul><h3>Kwargs</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>create_if_missing</span> (<em>bool</em>): if True, attempt to create the database if the
+initial request results in a NotFound
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>Database. An initialized Database object</li>
+                </ul><h3>Raises</h3>
+                <ul>
+                  <li>NotFound (when database does not exists and create_if_missing==False)</li>
+                </ul>
+              </div>
+            </li><a name="Couch.delete"></a>
+            <li class="method">
+              <a href="#Couch.delete"><span class="method-name">delete</span> <span class="args">(name, callback=<code>None</code>)</span></a>
+              <p>Delete the database with the specified name.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>name</span> (<em>str</em>): The name of the database to delete
+</li>
+                </ul><h3>Raises</h3>
+                <ul>
+                  <li>NotFound (when database does not exists)</li>
+                </ul>
+              </div>
+            </li><a name="Couch.replicate"></a>
+            <li class="method">
+              <a href="#Couch.replicate"><span class="method-name">replicate</span> <span class="args">(source, target, callback=<code>None</code>, **options)</span></a>
+              <p>Replicate changes from the source database to the target database.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>source</span> (<em>str, Database</em>): either a full url to the source database (with authentication
+provided inline) or an initialized Database object</li><li class='dedent'><span class='param'>target</span> (<em>str, Database</em>): the url or Database object of the target db
+</li>
+                </ul><h3>Kwargs</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>_id</span> (<em>str</em>): an optional replication_id. If provided, a doc will be created in
+the <code>_replicator</code> database for subsequent querying. If not provided, the  
+legacy <code>_replicate</code> API will be used instead.</li><li class='dedent'><span class='param'>cancel</span> (<em>bool</em>): if true, cancel the replication</li><li class='dedent'><span class='param'>continuous</span> (<em>bool</em>): if True, set the replication to be continuous</li><li class='dedent'><span class='param'>create_target</span> (<em>bool</em>): if True, creates the target database</li><li class='dedent'><span class='param'>doc_ids</span> (<em>list</em>): optional list of document IDs to be synchronized</li><li class='dedent'><span class='param'>proxy</span> (<em>str</em>): optional address of a proxy server to use
+</li>
+                </ul>
+              </div>
+            </li><a name="Couch.replicator"></a>
+            <li class="method">
+              <a href="#Couch.replicator"><span class="method-name">replicator</span> <span class="args"><span class="no-args">‹property›</span></span></a>
+              <p>The _replicator system database</p>
+              <div class="params">
+                <h3>Returns</h3>
+                <ul>
+                  <li>Database. This property is a synonym for <code>self.db('_replicator')</code></li>
+                </ul>
+              </div>
+            </li><a name="Couch.stats"></a>
+            <li class="method">
+              <a href="#Couch.stats"><span class="method-name">stats</span> <span class="args">(name=<code>None</code>, callback=<code>None</code>)</span></a>
+              <p>Server statistics.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>name</span> (<em>str</em>): optional sub-path of stats dict to return
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>When called without args, returns the entire stats dictionary</li><li>When <code>name</code> is specified, returns the value at that sub-path</li>
+                </ul><h3>Raises</h3>
+                <ul>
+                  <li>NotFound (when provided <code>name</code> is invalid)</li>
+                </ul>
+              </div>
+            </li><a name="Couch.tasks"></a>
+            <li class="method">
+              <a href="#Couch.tasks"><span class="method-name">tasks</span> <span class="args">(callback=<code>None</code>)</span></a>
+              <p>A list of tasks currently active on the server.</p>
+              <div class="params">
+                
+              </div>
+            </li><a name="Couch.users"></a>
+            <li class="method">
+              <a href="#Couch.users"><span class="method-name">users</span> <span class="args"><span class="no-args">‹property›</span></span></a>
+              <p>The _users system database.</p>
+              <div class="params">
+                <h3>Returns</h3>
+                <ul>
+                  <li>Database. This property is a synonym for <code>self.db('_users')</code></li>
+                </ul>
+              </div>
+            </li><a name="Couch.uuids"></a>
+            <li class="method">
+              <a href="#Couch.uuids"><span class="method-name">uuids</span> <span class="args">(count=<code>1</code>, callback=<code>None</code>)</span></a>
+              <p>Retrieve a batch of uuids</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>count</span> (<em>int</em>): optional number of uuids to retrieve
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>list. A list of uuid strings of length=count</li>
+                </ul>
+              </div>
+            </li><a name="Couch.version"></a>
+            <li class="method">
+              <a href="#Couch.version"><span class="method-name">version</span> <span class="args">(callback=<code>None</code>)</span></a>
+              <p>The version string of the CouchDB server.</p>
+              <div class="params">
+                
+              </div>
+            </li>
+          </ul>
+        </div><div class="api-class">
+          <h1><div class="prefix">corduroy.</div><a name="Database">Database</a></h1>
+          <p>Represents a single DB on a couch server.</p><p>This is the primary class for interacting with documents, views, changes, et al.</p>
+          <div class="params">
+            
+          </div>
+
+          <ul>
+            <a name="Database.__init__"></a>
+            <li class="method">
+              <a href="#Database.__init__"><span class="method-name">__init__</span> <span class="args">(name, auth=<code>None</code>)</span></a>
+              <p>Initialize the database object.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>name</span> (<em>str</em>): either a full url path to the database, or just a database name 
+(to which the host specified in corduroy.defaults will be prepended)</li><li class='dedent'><span class='param'>auth</span> (<em>tuple</em>): optional login information. e.g., ('username', 'password')
+</li>
+                </ul>
+              </div>
+            </li><a name="Database.changes"></a>
+            <li class="method">
+              <a href="#Database.changes"><span class="method-name">changes</span> <span class="args">(callback=<code>None</code>, **opts)</span></a>
+              <p>Retrieve a list of changes from the database or begin listening to
+a continuous feed.</p>
+              <div class="params">
+                <h3>Kwargs</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>since</span> (<em>int</em>): 
+    the earliest seq value that should be reported</li><li class='dedent'><span class='param'>limit</span> (<em>int</em>): 
+    maximum number of changes to return</li><li class='dedent'><span class='param'>filter</span> (<em>str</em>): 
+    name of a filter function (e.g., <code>myddoc/subset</code>)</li><li class='dedent'><span class='param'>include_docs</span> (<em>bool</em>): 
+    if true, each element of the 'results' array in the return 
+    value will also containt a 'doc' attribute</li><li class='dedent'><span class='param'>feed</span> (<em>str</em>): 
+    if 'continuous', a <code>ChangesFeed</code> object will be created and begin 
+    listening to the specified _changes feed. </li><li class='dedent'><span class='param'>callback</span> (<em>function w/ signature ƒ(seq, changes)</em>): 
+    the callback will be invoked repeatedly whenever new changes 
+    arrive. The seq argument is the integer value of the most recent 
+    seq in that batch. the changes argument is a list of dicts of 
+    the form: <code>[{seq:0, id:'', changes:[]}, …]</code></li><li class='dedent'><span class='param'>latency</span> (<em>default=1</em>):             
+    minimum time period between invocations of the callback. When
+    set to 0, the callback will be invoked for every individual 
+    change. With higher values, changes will be batched for
+    efficiency's sake.</li><li class='dedent'><span class='param'>heartbeat</span> (<em>int</em>): 
+    time period between keepalive events (in seconds).</li><li class='dedent'><span class='param'>timeout</span> (<em>int</em>): 
+    maximum period of inactivity (in seconds) before which the server 
+    will send a response.
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>When called without requesting a feed: a dictionary of the form <code>{last_seq:0, results:[{id:'', seq:0, …}, …]}</code></li><li>If called with <code>feed='continuous'</code> and a valid callback: a ChangesFeed object</li>
+                </ul>
+              </div>
+            </li><a name="Database.cleanup"></a>
+            <li class="method">
+              <a href="#Database.cleanup"><span class="method-name">cleanup</span> <span class="args">(callback=<code>None</code>)</span></a>
+              <p>Clean up old design document indexes.</p>
+              <div class="params">
+                <h3>Returns</h3>
+                <ul>
+                  <li>dict of the form <code>{ok:True}</code></li>
+                </ul>
+              </div>
+            </li><a name="Database.commit"></a>
+            <li class="method">
+              <a href="#Database.commit"><span class="method-name">commit</span> <span class="args">(callback=<code>None</code>)</span></a>
+              <p>If the server is configured to delay commits, or previous requests
+used the special <code class="inline">X-Couch-Full-Commit:</code> <code class="inline">false</code> header to disable
+immediate commits, this method can be used to ensure that any
+non-committed changes are committed to physical storage.</p>
+              <div class="params">
+                
+              </div>
+            </li><a name="Database.compact"></a>
+            <li class="method">
+              <a href="#Database.compact"><span class="method-name">compact</span> <span class="args">(ddoc=<code>None</code>, callback=<code>None</code>)</span></a>
+              <p>Compact the database or a design document's index.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>ddoc</span> (<em>str</em>): optional design doc name
+</li>
+                </ul>
+              </div>
+            </li><a name="Database.copy"></a>
+            <li class="method">
+              <a href="#Database.copy"><span class="method-name">copy</span> <span class="args">(source, dest, callback=<code>None</code>)</span></a>
+              <p>Copy a given document to create a new document or overwrite an old one.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>source</span> (<em>str, dict</em>): either a string containing an ID or a dict with <code>_id</code> and <code>_rev</code> keys
+specifying the document to be copied</li><li class='dedent'><span class='param'>dest</span> (<em>str, dict</em>): either a string containing an ID or a dict with <code>_id</code> and <code>_rev</code> keys
+specifying the document to be created/overwritten
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>dict of form {id:'', rev:''} identifying the destination document.</li>
+                </ul><h3>Raises</h3>
+                <ul>
+                  <li>Conflict (when dest doc already exists and an up-to-date _rev was not specified)</li>
+                </ul>
+              </div>
+            </li><a name="Database.delete"></a>
+            <li class="method">
+              <a href="#Database.delete"><span class="method-name">delete</span> <span class="args">(doc, callback=<code>None</code>)</span></a>
+              <p>Delete the given document from the database.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>doc</span> (<em>dict-like</em>): an object with <code>_id</code> and <code>_rev</code> keys identifying the doc to be deleted
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>dict: {ok:True, id:'', rev:''}</li>
+                </ul><h3>Raises</h3>
+                <ul>
+                  <li>NotFound (when doc['_id'] does not exist)
+Conflict (when dest doc already exists and an up-to-date _rev was not specified)</li>
+                </ul>
+              </div>
+            </li><a name="Database.delete_attachment"></a>
+            <li class="method">
+              <a href="#Database.delete_attachment"><span class="method-name">delete_attachment</span> <span class="args">(doc, filename, callback=<code>None</code>)</span></a>
+              <p>Delete the specified attachment.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>doc</span> (<em>dict-like</em>): an object with <code>_id</code> and <code>_rev</code> keys</li><li class='dedent'><span class='param'>filename</span> (<em>str</em>): the name of the attachment to be deleted in the given doc
+</li>
+                </ul><h3>Side Effects</h3>
+                <ul>
+                  <li>Will update the doc argument's _rev value upon succesfully deleting the attachment</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>dict {ok:True}</li>
+                </ul><h3>Raises</h3>
+                <ul>
+                  <li>NotFound, Conflict.</li>
+                </ul>
+              </div>
+            </li><a name="Database.exists"></a>
+            <li class="method">
+              <a href="#Database.exists"><span class="method-name">exists</span> <span class="args">(callback=<code>None</code>)</span></a>
+              <p>Check whether this Database object corresponds to an existing db on the server</p>
+              <div class="params">
+                <h3>Returns</h3>
+                <ul>
+                  <li>boolean</li>
+                </ul>
+              </div>
+            </li><a name="Database.get"></a>
+            <li class="method">
+              <a href="#Database.get"><span class="method-name">get</span> <span class="args">(id_or_ids=<code>False</code>, callback=<code>None</code>, **options)</span></a>
+              <p>Return the document(s) with the specified ID(s).</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>id_or_ids</span> (<em>str, list</em>): either a single ID or a list of IDs to fetch in a bulk request
+</li>
+                </ul><h3>Kwargs</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>rev</span> (<em>str</em>): if present, specifies a specific revision to retrieve</li><li class='dedent'><span class='param'>revs</span> (<em>bool</em>): if true, add a _revs attribute to the returned doc</li><li class='dedent'><span class='param'>revs_info</span> (<em>bool</em>): if true, add a _revs_info attribute to the returned doc</li><li>When called with a list of IDs, all standard view options can be applied
+(see Database.view for a complete listing).</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>If a single ID is requested, returns a corresponding Document or raises an 
+exception if the doc does not exist.</li><li>If a list of IDs was requested, returns a corresponding list of Document objects.
+Requesting IDs referencing non-existent docs will not raise an exception but will
+place a corresponding None in the list of returned docs.</li>
+                </ul><h3>Raises</h3>
+                <ul>
+                  <li>NotFound (when a single ID is requested and no corresponding doc is found)</li>
+                </ul>
+              </div>
+            </li><a name="Database.get_attachment"></a>
+            <li class="method">
+              <a href="#Database.get_attachment"><span class="method-name">get_attachment</span> <span class="args">(id_or_doc, filename, callback=<code>None</code>)</span></a>
+              <p>Return an attachment from the specified doc and filename.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>doc</span> (<em>str, dict-like</em>): an ID string or dict with an <code>_id</code> key</li><li class='dedent'><span class='param'>filename</span> (<em>str</em>): the name of the attachment to retrieve
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>str. The raw attachment data as a bytestring</li>
+                </ul>
+              </div>
+            </li><a name="Database.info"></a>
+            <li class="method">
+              <a href="#Database.info"><span class="method-name">info</span> <span class="args">(ddoc=<code>None</code>, callback=<code>None</code>)</span></a>
+              <p>Fetch information about the database or a design document.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>ddoc</span> (<em>str</em>): optional design doc name
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>dict. Equivalent to a GET on the database or ddoc's url</li>
+                </ul><h3>Raises</h3>
+                <ul>
+                  <li>NotFound</li>
+                </ul>
+              </div>
+            </li><a name="Database.list"></a>
+            <li class="method">
+              <a href="#Database.list"><span class="method-name">list</span> <span class="args">(name, view, callback=<code>None</code>, **options)</span></a>
+              <p>Format a view using a 'list' function.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>name</span> (<em>str</em>): the ddoc and list function name (e.g., myddoc/weekly)
+view (str): a view to run the list against. if the view is in
+            the same ddoc as the list function, just its name can
+            be passed (e.g., 'stats' instead of 'myddoc/stats'). 
+            Otherwise the ddoc should be included in the view name.
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>object with two attributes of interest:
+    * headers: a dictionary of the response headers
+    * body: either a bytestring or a decoded json object (if the response
+            content type was application/json)</li><li></li>
+                </ul>
+              </div>
+            </li><a name="Database.pull"></a>
+            <li class="method">
+              <a href="#Database.pull"><span class="method-name">pull</span> <span class="args">(source, callback=<code>None</code>, **options)</span></a>
+              <p>Initiate a replication from a source url to this database</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>    source</span> (<em>str, Database</em>): the database from which to replicate</li><li class='dedent'><span class='param'>Kwargs</span> (<em>c.f., Couch.replicate):
+    _id (str</em>): an optional replication_id. If provided, a doc will be created in
+    the <code>_replicator</code> database for subsequent querying. If not provided, the  
+    legacy <code>_replicate</code> API will be used instead.</li><li class='dedent'><span class='param'>    cancel</span> (<em>bool</em>): if true, cancel the replication</li><li class='dedent'><span class='param'>    continuous</span> (<em>bool</em>): if True, set the replication to be continuous</li><li class='dedent'><span class='param'>    create_target</span> (<em>bool</em>): if True, creates the target database</li><li class='dedent'><span class='param'>    doc_ids</span> (<em>list</em>): optional list of document IDs to be synchronized</li><li class='dedent'><span class='param'>    proxy</span> (<em>str</em>): optional address of a proxy server to use
+</li>
+                </ul>
+              </div>
+            </li><a name="Database.purge"></a>
+            <li class="method">
+              <a href="#Database.purge"><span class="method-name">purge</span> <span class="args">(docs, callback=<code>None</code>)</span></a>
+              <p>Perform purging (complete removal) of the given documents.</p><p>Uses a single HTTP request to purge all given documents. Purged
+documents do not leave any metadata in the storage and are not
+replicated.</p><p>Think thrice before doing this.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>docs</span> (<em>list</em>): containing dicts of the form <code>{_id:'', _rev:''}</code>
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>dict of the form <code>{purge_seq:0, purged:{id1:[], id2:[], ...}}</code></li>
+                </ul>
+              </div>
+            </li><a name="Database.push"></a>
+            <li class="method">
+              <a href="#Database.push"><span class="method-name">push</span> <span class="args">(target, callback=<code>None</code>, **options)</span></a>
+              <p>Initiate a replication from this database to a target url</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>    target</span> (<em>str, Database</em>): the target database</li><li class='dedent'><span class='param'>Kwargs</span> (<em>c.f., Couch.replicate):
+    _id (str</em>): an optional replication_id. If provided, a doc will be created in
+    the <code>_replicator</code> database for subsequent querying. If not provided, the  
+    legacy <code>_replicate</code> API will be used instead.</li><li class='dedent'><span class='param'>    cancel</span> (<em>bool</em>): if true, cancel the replication</li><li class='dedent'><span class='param'>    continuous</span> (<em>bool</em>): if True, set the replication to be continuous</li><li class='dedent'><span class='param'>    create_target</span> (<em>bool</em>): if True, creates the target database</li><li class='dedent'><span class='param'>    doc_ids</span> (<em>list</em>): optional list of document IDs to be synchronized</li><li class='dedent'><span class='param'>    proxy</span> (<em>str</em>): optional address of a proxy server to use
+</li>
+                </ul>
+              </div>
+            </li><a name="Database.put_attachment"></a>
+            <li class="method">
+              <a href="#Database.put_attachment"><span class="method-name">put_attachment</span> <span class="args">(doc, content, filename=<code>None</code>, content_type=<code>None</code>, callback=<code>None</code>)</span></a>
+              <p>Create or replace an attachment.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>doc</span> (<em>dict-like</em>): an object with <code>_id</code> and <code>_rev</code> keys</li><li class='dedent'><span class='param'>content</span> (<em>str, file</em>): the attachment data</li><li class='dedent'><span class='param'>filename</span> (<em>str</em>): optionally specify the name to use (unnecessary w/ file objects)</li><li class='dedent'><span class='param'>content_type</span> (<em>str</em>): optionally specify the mime type to use (unnecessary w/ file objects)
+</li>
+                </ul><h3>Side Effects</h3>
+                <ul>
+                  <li>Will update the doc argument's _rev value upon succesfully updating the attachment</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>dict of form <code>{ok:True, id:'', rev:''}</code></li>
+                </ul><h3>Raises</h3>
+                <ul>
+                  <li>NotFound, Conflict</li>
+                </ul>
+              </div>
+            </li><a name="Database.query"></a>
+            <li class="method">
+              <a href="#Database.query"><span class="method-name">query</span> <span class="args">(map_src, reduce_src=<code>None</code>, callback=<code>None</code>, **options)</span></a>
+              <p>Create a temporary view using the provided javascript function(s)
+and perform a mind-bendingly inefficient ad-hoc query.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>map_src</span> (<em>str</em>): a map function string such as:
+    'function(doc){emit(null,null)}'</li><li class='dedent'><span class='param'>reduce_src</span> (<em>str</em>): optionally include a reduce function string:
+    'function(key, values, rereduce){return sum(values)}'
+    or the name of a builtin (<code>_sum</code>, <code>_count</code>, or <code>_stats</code>)
+</li>
+                </ul><h3>Kwargs</h3>
+                <ul>
+                  <li>all standard view options (see Database.view)</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>View. An iterable list of Row object.</li>
+                </ul>
+              </div>
+            </li><a name="Database.revisions"></a>
+            <li class="method">
+              <a href="#Database.revisions"><span class="method-name">revisions</span> <span class="args">(id, callback=<code>None</code>, **options)</span></a>
+              <p>Return all available revisions of the given document.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>id</span> (<em>str</em>): ID of the doc whose revisions to fetch
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>list. All prior _rev strings sorted reverse chronologically</li>
+                </ul><h3>Raises</h3>
+                <ul>
+                  <li>NotFound.</li>
+                </ul>
+              </div>
+            </li><a name="Database.save"></a>
+            <li class="method">
+              <a href="#Database.save"><span class="method-name">save</span> <span class="args">(doc_or_docs=<code>None</code>, merge=<code>None</code>, force=<code>False</code>, callback=<code>None</code>, **options)</span></a>
+              <p>Create a new document or update an existing document.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>doc_or_docs</span> (<em>dict, list</em>): either a single dict-like object or a list of many
+</li>
+                </ul><h3>Kwargs</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>batch</span> (<em>str</em>): if equal to "ok" when submitting a single document, the server will
+defer writing to disk (speeding throughput but risking data loss)</li><li class='dedent'><span class='param'>all_or_nothing</span> (<em>boolean</em>): if True when submitting a list of documents, conflict
+checking will be disabled and either the entire list of docs will be written
+to the database or none will (see couchdb docs for more details on the not-
+entirely-intuitive semantics).</li><li class='dedent'><span class='param'>force</span> (<em>bool</em>): if True, will retry any writes that caused a conflict after fetching
+the current _revs from the server. This will not necessarily succeed if the database
+is write-heavy due to the race condition between retrieving the _rev and attempting 
+the update. The use of force outside of a debugging context is highly discouraged.</li><li class='dedent'><span class='param'>merge</span> (<em>function w/ signature ƒ(local_doc, server_doc)</em>): If the inital update request
+causes any conflicts, the current server copy of each conflicting doc will be
+fetched and the <code>merge</code> function will be called for each local/remote pair. The
+merge function should return either a dict-like object to be written to the database
+or (in case the write attempt should be abandoned) None.
+</li>
+                </ul><h3>Side Effects</h3>
+                <ul>
+                  <li>All docs passed as arguments will have their _id and/or _rev updated to reflect a 
+successful write. In addition, these up-to-date dicts can be found in the 
+return value's <code>.resolved</code> property (useful in an async context where the callback
+function doesn't have the original arguments in its scope)</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>ConflictResolution. An object with two attributes of interest:
+    * pending: a dictionary (keyed by _id) of docs which were not successfully
+               written due to conflicts
+    * resolved: a dictionary (keyed by _id) of docs which were successfully written</li>
+                </ul><h3>Raises</h3>
+                <ul>
+                  <li>Conflict.</li><li>As with the Database.get method, exceptions will be raised in the single-doc case, 
+but when dealing with a list of docs, errors will be signaled on a doc-by-doc basis
+in the return value.</li>
+                </ul>
+              </div>
+            </li><a name="Database.security"></a>
+            <li class="method">
+              <a href="#Database.security"><span class="method-name">security</span> <span class="args">(value=<code>None</code>, callback=<code>None</code>)</span></a>
+              <p>Access the database's _security object</p><p>If called without arguments, returns the security object. If called with a 
+dict, sets the security object to that value.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>value</span> (<em>dict</em>): the new security object to be saved to the database
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>dict. The current security object.</li>
+                </ul>
+              </div>
+            </li><a name="Database.show"></a>
+            <li class="method">
+              <a href="#Database.show"><span class="method-name">show</span> <span class="args">(name, id=<code>None</code>, callback=<code>None</code>, **options)</span></a>
+              <p>Call a 'show' function.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>name</span> (<em>str</em>): the show function to use (e.g., myddoc/atomfeed)</li><li class='dedent'><span class='param'>id</span> (<em>str</em>): optional ID of the doc on which the show function will 
+          be run
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>object with two attributes of interest:
+    * headers: a dictionary of the response headers
+    * body: either a bytestring or a decoded json object (if the 
+            response content type was application/json)</li>
+                </ul>
+              </div>
+            </li><a name="Database.update"></a>
+            <li class="method">
+              <a href="#Database.update"><span class="method-name">update</span> <span class="args">(name, id=<code>None</code>, body=<code>None</code>, callback=<code>None</code>, **options)</span></a>
+              <p>Calls a server side update handler.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>name</span> (<em>str</em>): the update-handler function name (e.g., myddoc/in_place_update)</li><li class='dedent'><span class='param'>id</span> (<em>str</em>): optionally specify the ID of a doc to update
+</li>
+                </ul><h3>Kwargs</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>body</span> (<em>str, dict</em>): optionally include data in the POST body. Dicts will
+be form-encoded and will appear in your update handler in the req.form 
+field. Strings will be passed as-is and can be found in req.body.</li><li>Other kwargs will be urlencoded and appended to the query string.</li>
+                </ul>
+              </div>
+            </li><a name="Database.view"></a>
+            <li class="method">
+              <a href="#Database.view"><span class="method-name">view</span> <span class="args">(name, callback=<code>None</code>, **options)</span></a>
+              <p>Query a view.</p><p>All of the query args in the HTTP api can be passed as keyword
+args. Key values should be json-serializeable objects (abbreviated
+as <code>obj</code> below) of the form defined in your view function.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>name</span> (<em>str</em>): a view name of the form 'myddoc/viewname'
+</li>
+                </ul><h3>Kwargs</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>key</span> (<em>obj</em>): retrieve only rows matching this key</li><li class='dedent'><span class='param'>keys</span> (<em>list</em>): a list of key values to retrieve</li><li class='dedent'><span class='param'>descending</span> (<em>bool</em>): whether to invert the ordering of the rows.
+This ordering is applied before any key filtering takes place,
+thus you may need to reverse your <code>start</code>s and <code>end</code>s when
+toggling this.</li><li class='dedent'><span class='param'>startkey</span> (<em>obj</em>): key of the first row to include in the results</li><li class='dedent'><span class='param'>endkey</span> (<em>obj</em>): key of the final row of results</li><li class='dedent'><span class='param'>inclusive_end</span> (<em>bool</em>): by default, include rows matching <code>endkey</code>
+in the results. If False, treat <code>endkey</code> as defining the
+first rows to be *excluded* from the results.</li><li class='dedent'><span class='param'>startkey_docid</span> (<em>str</em>): within the rows bounded by startkey and 
+endkey, perform a further filtering by discarding rows before
+this ID.</li><li class='dedent'><span class='param'>endkey_docid</span> (<em>str</em>): discard rows between this doc ID and endkey            </li><li class='dedent'><span class='param'>include_docs</span> (<em>bool</em>): if True, each Row in the results will
+have the corresponding document in its .doc attr.</li><li class='dedent'><span class='param'>limit</span> (<em>int</em>): the maximum number of rows to retrieve</li><li class='dedent'><span class='param'>stale</span> (<em>str</em>): specify how to handle view indexing,
+    * 'ok': build results from the current index even if it's
+          out of date
+    * 'update_after': return stale results but trigger a
+          view re-index for the benefit of subsequent queries.</li><li class='dedent'><span class='param'>skip</span> (<em>int</em>): of the rows that would be returned on the basis of
+any prior key filtering, discard this many from the beginning.</li><li class='dedent'><span class='param'>update_seq</span> (<em>bool</em>): include an update_seq field in the response
+indicating the seq of the most recent indexing (from which the
+results were pulled).</li><li class='dedent'><span class='param'>reduce</span> (<em>bool</em>): if False, ignore the reduce function on this 
+view and return the output of its map step.</li><li class='dedent'><span class='param'>group</span> (<em>bool</em>): if True, generate a row for each distinct key in
+the reduce results. By defualt, the reduce function's output
+will boil down to a single row.</li><li class='dedent'><span class='param'>group_level</span> (<em>int or 'exact'</em>): when using ‘complex keys’ (i.e., 
+lists) group_level defines how many elements from each key
+should be used when deciding if rows have ‘distinct’ keys
+for the purposes of the reduction step.
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>View.</li><li></li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div><div class="module">
+        <div class="api-class">
+          <h1><div class="prefix">corduroy.</div><a name="View">View</a></h1>
+          <p>Iterable representation of a set of results from a view query</p>
+          <div class="params">
+            <h3>Attributes</h3>
+            <ul>
+              <li class='dedent'><span class='param'>options</span> (<em>dict</em>): the query arguments that generated these results</li><li class='dedent'><span class='param'>total_rows</span> (<em>int</em>): the number of rows that matched the query (may
+be larger than len(view) if a <code>limit</code> is in the options dict)</li><li class='dedent'><span class='param'>offset</span> (<em>int</em>): the number of rows preceding this set of results</li><li class='dedent'><span class='param'>rows</span> (<em>list</em>): a list of Row objects (as are returned when iterating
+over the view object itself).
+</li>
+            </ul>
+          </div>
+
+          <ul>
+            
+          </ul>
+        </div><div class="api-class">
+          <h1><div class="prefix">corduroy.</div><a name="Row">Row</a></h1>
+          <p>Representation of a single row of results from a view query</p>
+          <div class="params">
+            
+          </div>
+
+          <ul>
+            <a name="Row.doc"></a>
+            <li class="method">
+              <a href="#Row.doc"><span class="method-name">doc</span> <span class="args"><span class="no-args">‹property›</span></span></a>
+              <p>The associated document for the row. This is only present when the
+view was accessed with <code class="inline">include_docs=True</code> as a query parameter,
+otherwise this property will be <code>None</code>.</p>
+              <div class="params">
+                
+              </div>
+            </li><a name="Row.error"></a>
+            <li class="method">
+              <a href="#Row.error"><span class="method-name">error</span> <span class="args"><span class="no-args">‹property›</span></span></a>
+              <p>Couch's description of an error if one occurred, otherwise <code>None</code></p>
+              <div class="params">
+                
+              </div>
+            </li><a name="Row.id"></a>
+            <li class="method">
+              <a href="#Row.id"><span class="method-name">id</span> <span class="args"><span class="no-args">‹property›</span></span></a>
+              <p>The ID of the doc that emitted this row if it exists 
+or <code>None</code> if it doesn't (e.g., when querying a view
+with a reduce function).</p>
+              <div class="params">
+                
+              </div>
+            </li><a name="Row.key"></a>
+            <li class="method">
+              <a href="#Row.key"><span class="method-name">key</span> <span class="args"><span class="no-args">‹property›</span></span></a>
+              <p>The emitted key</p>
+              <div class="params">
+                
+              </div>
+            </li><a name="Row.value"></a>
+            <li class="method">
+              <a href="#Row.value"><span class="method-name">value</span> <span class="args"><span class="no-args">‹property›</span></span></a>
+              <p>The emitted value</p>
+              <div class="params">
+                
+              </div>
+            </li>
+          </ul>
+        </div><div class="api-class">
+          <h1><div class="prefix">corduroy.</div><a name="Document">Document</a></h1>
+          <p>A dictionary subclass with couch-friendly additions.</p><p>Inherits from <code>odict</code> to preserve key-ordering when converting to/from
+json and from <code>adict</code> to allow for dot-syntax access to dictionary items.</p>
+          <div class="params">
+            
+          </div>
+
+          <ul>
+            
+          </ul>
+        </div><div class="api-class">
+          <h1><div class="prefix">corduroy.</div><a name="Status">Status</a></h1>
+          <p>Contains the server response from an HTTP request.</p><p>Status objects are returned as the final argument to callback functions when returning
+from an asynchronous database request.</p>
+          <div class="params">
+            <h3>Attributes</h3>
+            <ul>
+              <li class='dedent'><span class='param'>ok</span> (<em>bool</em>): True if the server gave a non-error response code</li><li class='dedent'><span class='param'>code</span> (<em>int</em>): the HTTP response code</li><li class='dedent'><span class='param'>headers</span> (<em>dict</em>): the response headers</li><li class='dedent'><span class='param'>exception</span> (<em>HTTPError</em>): <code>None</code> if the request was successful, or an HTTPError subclass</li><li class='dedent'><span class='param'>error</span> (<em>cls</em>): the class of the exception (or <code>None</code>). This is redundant but allows
+for the syntax <code class="inline">if</code> <code class="inline">status.error</code> <code class="inline">is</code> <code class="inline">NotFound</code> in callback functions.
+</li>
+            </ul>
+          </div>
+
+          <ul>
+            
+          </ul>
+        </div>
+      </div><div class="module">
+        <div class="api-class">
+          <h1><div class="prefix">corduroy.</div><a name="ChangesFeed">ChangesFeed</a></h1>
+          <p>Persistent listener to a Database's <code>_changes</code> endpoint</p>
+          <div class="params">
+            <h3>Attributes</h3>
+            <ul>
+              <li class='dedent'><span class='param'>callback</span> (<em>function w/ signature ƒ(seq, changes)</em>): the user callback to which incoming 
+changesets will be passed.</li><li class='dedent'><span class='param'>latency</span> (<em>float</em>): the minimum time (in seconds) between invocations of the user callback.
+</li>
+            </ul>
+          </div>
+
+          <ul>
+            <a name="ChangesFeed.listen"></a>
+            <li class="method">
+              <a href="#ChangesFeed.listen"><span class="method-name">listen</span> <span class="args">()</span></a>
+              <p>Open a new connection</p>
+              <div class="params">
+                
+              </div>
+            </li><a name="ChangesFeed.stop"></a>
+            <li class="method">
+              <a href="#ChangesFeed.stop"><span class="method-name">stop</span> <span class="args">()</span></a>
+              <p>Close the connection to the server</p>
+              <div class="params">
+                
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div><div class="module">
+        <div class="api-class">
+          <h1><div class="prefix">corduroy.</div><a name="ConflictResolution">ConflictResolution</a></h1>
+          <p>The result of an attempt to write to the database.</p><p>Presents the results of a <code>Database.save</code> call and provides syntax 
+for resolution of any conflicted documents</p>
+          <div class="params">
+            <h3>Attributes</h3>
+            <ul>
+              <li class='dedent'><span class='param'>pending</span> (<em>dict</em>): A dictionary (keyed by _id) of docs that were not 
+    successfully written due to conflicts. e.g., 
+    <code class="inline">{some_doc:</code> <code class="inline">{doc:{_id:"some_doc",</code> <code class="inline">…},</code> <code class="inline">error:"conflict"},</code> <code class="inline">…}</code></li><li class='dedent'><span class='param'>resolved</span> (<em>dict</em>): A dictionary (keyed by <code>_id</code>) of docs that were written 
+    without error. Their <code>_id</code> and <code>_rev</code> keys have been updated to 
+    reflect the save.
+</li>
+            </ul>
+          </div>
+
+          <ul>
+            <a name="ConflictResolution.overwrite"></a>
+            <li class="method">
+              <a href="#ConflictResolution.overwrite"><span class="method-name">overwrite</span> <span class="args">(callback=<code>None</code>)</span></a>
+              <p>Attempt to replace the server's copy of the docs with those in .pending</p><p>This is a brute-force method of resolving conflicts. The database is queried
+for the _revs of all the docs with pending conflicts. The local copies of the
+docs are then updated with the up-to-date _revs and a bulk-save is attempted.</p>
+              <div class="params">
+                <h3>Returns</h3>
+                <ul>
+                  <li>self (after updating the pending and resolved dicts)</li>
+                </ul>
+              </div>
+            </li><a name="ConflictResolution.resolve"></a>
+            <li class="method">
+              <a href="#ConflictResolution.resolve"><span class="method-name">resolve</span> <span class="args">(merge, callback=<code>None</code>)</span></a>
+              <p>Attempt to merge the local and server versions of docs with pending conflicts.</p><p>Allows a user-provided function to decide how to resolve each conflict and what
+(if anything) ought to be written to the server.</p>
+              <div class="params">
+                <h3>Args</h3>
+                <ul>
+                  <li class='dedent'><span class='param'>merge</span> (<em>function w/ signature ƒ(local_doc, server_doc)</em>): This function should
+create a new version of the doc incorporating the proper elements of both
+copies. If a dict-like object is returned, an attempt will be made to write
+it to the database. If <code>None</code> is returned, the document will be skipped in
+the write attempt and remains ‘pending’.
+</li>
+                </ul><h3>Returns</h3>
+                <ul>
+                  <li>self (after updating the pending and resolved dicts)</li><li></li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div><div class="module">
+        <div class="api-class">
+          <h1><div class="prefix">corduroy.</div><a name="@relax">@relax</a></h1>
+          <p>A decorator for simplifying async couchdb access from Tornado.</p><p>Methods using this decorator will be able to make asynchronous calls to the database
+without needing to provide explicit callbacks (and restoring traditional exception
+handling in the process). It decides between applying tornado's <code class="inline">@asynchronous</code> and
+<code class="inline">@gen.engine</code> decorators as appropriate for a given method.</p><p>Its primary function is to intercept yield statements in your request handler and to 
+evaluate them asynchronously (with an automatic callback that it inserts). When the
+database request completes, the callback will resume your function at the yield point
+and pass the received data off with a simple assignment.</p>
+          <div class="params">
+            
+          </div>
+
+          <ul>
+            
+          </ul>
+        </div>
+      </div>
+    <div class="module">
+      <a name="Exceptions"></a>
+      <div class="api-class">
+        <h1>Exceptions</h1>
+          <p>Everything that can go wrong…</p>
+          <p>Couch gives quite a bit of feedback through numeric HTTP error codes. These exceptions
+             give less-unweildy names to some of the more common ones:</p>
+
+          <div class="params">
+            <h3>HTTPError</h3>
+            <ul><li>Base class for all exceptions with HTTP status codes >= 400.</li></ul><br />
+
+            <h3>NotFound</h3>
+            <ul><li>Raised when a 404 error occurs.</li></ul><br />
+
+            <h3>Conflict</h3>
+            <ul><li>Raised when a 409 error occurs.</li></ul><br />
+
+            <h3>PreconditionFailed</h3>
+            <ul><li>Raised when a 412 error occurs.</li></ul><br />
+
+            <h3>ServerError</h3>
+            <ul><li>Raised when an HTTP status code >=500 occurs.</li></ul><br />
+          </div>        
+        
+      </div>
+    </div>
+
+
+  </div>
+
+  <script src="_/js/jquery.min.js" charset="utf-8"></script>
+  <script src="_/js/corduroy.js" charset="utf-8"></script>
+</body>
+</html>

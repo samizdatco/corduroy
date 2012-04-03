@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Corduroy: Guide</title>
+	<meta name="generator" content="TextMate http://macromates.com/">
+	<meta name="author" content="Christian Swinehart">
+	
+	<link rel="stylesheet" href="{{root}}_/css/cords.css" type="text/css" charset="utf-8">
+	<!-- Date: 2012/03/04 -->
+</head>
+<body>
+  <div id="masthead">
+    <img src="{{root}}_/css/logo.png" usemap="#imap" />
+    <map name="imap"><area shape="rect" coords="0,30,250,85" href="{{readme}}" /></map>
+  </div>
+  
+  <div id="container">
+    <div class="nav">
+      <div class="home"><a href="/corduroy">Corduroy.py</a></div>
+      <div class="controls">
+        <h1>Guide</h1>
+        <ul>
+          <li class="active"><a href="#hello-tornado">Hello Tornado</a></li>
+          <li><a href="#conventions">Conventions</a></li>
+          <li><a href="#couches-and-databases">Couches &amp; Databases</a></li>
+          <li><a href="#documents">Documents</a></li>
+          <li><a href="#eventual-consistency">Eventual Consistency</a></li>
+          <li><a href="#views">Views</a></li>
+          <li><a href="#data-formatters">Data Formatters</a></li>
+          <li><a href="#replication">Replication</a></li>
+          <li><a href="#change-notifications">Change Notifications</a></li>
+          <li><a href="#further-reading">Further Reading</a></li>
+        </ul><br/>
+      
+        <h1>Reference</h1>
+        <ul>
+          <li><a href="{{ref}}#Couch">Couch</a></li>
+          <li><a href="{{ref}}#Database">Database</a></li>
+          <li><a href="{{ref}}#View">View</a></li>
+          <li><a href="{{ref}}#Row">Row</a></li>
+          <li><a href="{{ref}}#Document">Document</a></li>
+          <li><a href="{{ref}}#Status">Status</a></li>
+          <li><a href="{{ref}}#ChangesFeed">ChangesFeed</a></li>
+          <li><a href="{{ref}}#ConflictResolution">ConflictResolution</a></li>
+          <li><a href="{{ref}}#@relax">@relax</a></li>
+          <li><a href="{{ref}}#Exceptions">Exceptions</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="guide">
+
+    <a name="hello-tornado"></a>
+    <h1>Hello Tornado</h1>
+    <p>To get a feel for the different ways of interacting with Couch, let’s start with a Hello World. Here’s
+       the boilerplate to set up a tornado server with two endpoints at <code>/hello</code> and <code>/hi</code>:</p>
+    {{{app_boilerplate}}}
+    
+    <p>Since both of the request handlers (defined below) will need a reference to the database, set
+       up a global for them to share:</p>
+    {{{cords_boilerplate}}}
+    
+    <h2>The Twisted-Up Way</h2>
+    <p>Our first request handler will parse the url and pull out the last component (which will 
+       be treated as a document ID). It will then try to retrieve that doc from the database and print
+       a greeting based on its contents. Here is a handler that uses an explicit callback to make a 
+       non-blocking request:</p>
+    {{{jumpy_app}}} 
+    
+    <p>Though it’s gratifying to know that your server process isn’t blocking while waiting for Couch to
+       respond, the resulting code doesn’t feel terribly pythonic. Ideally something as simple as a GET
+       request should be a one-liner. In addition, the use of callbacks means your code is no longer 
+       in the call stack should an exception occur during the request. As a result, error handling becomes a 
+       C-like process of manual <code>status</code> inspection in lieu of idiomatic <code>try</code>/<code>except</code>
+       blocks.</p>
+        
+    <h2>The Way Out</h2>
+    <p>A particularly nice solution to this problem of twisted async code is provided by the <a
+       href="http://www.tornadoweb.org/documentation/gen.html"><code>tornado.gen</code></a> module. As the
+       abbreviated name suggests, their approach is to use python <a href="http://www.python.org/dev/peps/pep-0255/">generators</a> 
+       to turn request handler methods into coroutines that can be suspended during i/o then restarted when 
+       the response arrives.</p>
+      
+    <p>Corduroy is happy to work in this style and provides the <code>@relax</code> decorator to make
+       the syntax more transparent (or at least more glazed with sugar). When applied to one of your
+       methods, the decorator allows you to treat the API as if it were blocking and no longer requires
+       explicit callbacks. All your code needs to do to make this possible is place a <code>yield</code>
+       in front of calls to the library.</p>
+       
+    <p>The result of this <code>yield</code> expression will be the data that would ordinarily be passed to your
+       callback function but can now be captured through simple assignment. If an error occurrs, the decorator
+       handles that as well by raising the exception at the point of the <code>yield</code> in your code:</p>
+    {{{relaxed_app}}}
+    <p>This code <em>looks</em> like ‘normal’ blocking code but will in fact execute asynchronously. At the
+       point of the <code>yield</code> statement, the request handler releases control of the event loop while
+       Corduroy creates a callback behind the scenes. Once this internal callback fires, the request handler’s
+       method is resumed. The handler can then make other asynchronous requests or just return its output if
+       there’s nothing more to be done.</p>
+
+    <a name="conventions"></a>
+    <h1>Calling Conventions</h1>  
+    <p>Virtually every method in Corduroy accepts an optional keyword argument called <code>callback</code>.
+       When this argument is omitted (and the <code>@relax</code> decorator is not in effect), the call will 
+       use blocking i/o and the function call will not return until the operation is complete (or until an exception is raised).</p>
+    <p>If you pass a callable object (a.k.a. a function) as the callback arg, the call will complete almost
+       immediately and the return value will not be the final data but a replica of the HTTP Request (which can be
+       useful for debugging e.g., when passing a lot of options). The callback will be invoked moments later,
+       when the server response arrives.
+     </p>
+    <p>Callbacks should expect two arguments and be of the form:</p>
+    {{{example_callback}}}
+      
+    <h2>Callback Arguments</h2>
+    <p>The first argument will contain the response from the server, either as a unicode string or as a 
+       decoded json object. </p>
+    <p>The second argument allows for error checking and has five attributes of 
+       intrest: 
+    </p>
+    <ul>
+      <li><code>ok</code>: <code>False</code> if a response code >= 400 was received</li>
+      <li><code>code</code>: The numeric HTTP response code</li>
+      <li><code>headers</code>: A dictionary of response headers</li>
+      <li><code>exception</code>: Either <code>None</code> or the exception that would have been raised
+        were this a non-blocking call. Feel free to raise it yourself.</li>
+      <li><code>error</code>: Either <code>None</code> or the class of the exception. This is redundant, 
+        but also allows callback functions to use the syntax:<div class="sample"><pre><span class="k">if</span> <span class="n">status</span><span class="o">.</span><span class="n">error</span> <span class="ow">is</span> <span class="n">Conflict</span><span class="p">:</span></pre></div>
+        which seems rather friendlier than:<div class="sample"><pre><span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">exception</span><span class="p">,</span> <span class="n">Conflict</span><span class="p">):</span></pre></div>
+       </li>
+    </ul>
+    
+    <p>When <code>status.ok</code> is <code>False</code>, the contents of the first argument are somewhat
+       variable. Sometimes Couch responds verbosely to error conditions and the <code>data</code> argument will
+       contain a json object. At other times <code>data</code> will simply be <code>None</code>. When in 
+       doubt, consult the <a href="http://wiki.apache.org/couchdb/Complete_HTTP_API_Reference">HTTP API</a>.</p>
+      
+    <h2>Explicit vs. Implicit Callbacks</h2>
+    <p>When you call the database from within a <code>@relax</code>-decorated function you don't have to 
+       provide a callback; the decorator will do it for you. To give you some idea of what happens when you
+       type <code>yield</code>, the decorator-provided callback’s logic looks something like this:</p>
+       {{{relax_pseudocode}}}
+       
+    <p>The rest of this guide will use the implicit callback style for brevity’s sake. Just keep in mind that anywhere you
+       see a <code>yield</code> before a library call, you could pass a <code>callback</code> argument
+       instead.</p>
+      
+    <a name="couches-and-databases"></a>
+    <h1>Couches &amp; Databases</h1>
+    <p>When thought of purely as a key/value store, a CouchDB installation is a cascade of json objects with
+       three basic levels of hierarchy. In Couch nomenclature, a single <em>Server</em> can contain many <em>Databases</em> 
+       which in turn contain many <em>Documents</em>.</p>
+    <h2>The CouchDB Server</h2>
+    <p>Servers are represented by <code>Couch</code> objects. The constructor takes a url as an argument, 
+      but will use the values in <code>corduroy.defaults</code> to construct a default url if none is provided.
+      You can also include login credentials, either inline or as a 2-tuple.
+      If you haven’t overridden the <code>host</code> and <code>port</code> defaults, all of these instantiations should be equivalent:</p>
+      {{{couch_init}}}
+    <p>All three of the above will return with:</p>
+      {{#output}}<Couch 'http://127.0.0.1:5984'>{{/output}}
+    <p>Creating a <code>Couch</code> object doesn’t actually connect to the server. As a result it’s safe to
+       call the constructor in an event handler without needing a callback. You can then use the object’s 
+       <code>all_dbs</code> method to obtain a list of available databases, monitor server activity with
+       <code>tasks</code>, or read/write configuration options with <code>config</code>. See the Reference
+       docs for other server-level operations.</p>
+    <p>In all likelihood the only methods you’ll use regularly are <code>db</code> and <code>create</code>
+       which let you retrieve a reference to a specifc database using its name:</p>
+    {{{couch_interaction}}}
+    <p>Since this pattern is fairly common, the above can be simplified to:</p>
+    {{{couch_interaction_brief}}}
+
+    <h2>Databases</h2>
+    <p>You don’t actually need to create a <code>Couch</code> just to access a database. You can also
+       instantiate them directly by passing the full url to the db to the <code>Database</code> constructor.
+       As with <code>Couch</code> objects, the default server url will be prepended if necessary. Both of these
+       are equivalent:</p>
+    {{{db_init}}}
+    {{#output}}<Database 'some_db_name'>{{/output}}
+    <p>Creating a <code>Database</code> object doesn’t contact the server, but an efficient check for its
+       presence can be performed by calling its <code>exists</code> method. Similarly useful is the 
+       <code>info</code> method which performs a GET on the database’s root url.</p>
+
+    <a name="documents"></a>
+    <h1>Documents</h1>
+    <p>CouchDB documents are dict-style json objects with two required keys: <code>_id</code> and <code>_rev</code>.
+       The <code>_id</code> field is a unique-to-that-database string that allows the document to be requested
+       by name. The <code>_rev</code> value is filled in by the server when you create or update a document. It
+       is also the basis of Couch’s transaction-less mechanism for detecting write conflicts (see the <a href="eventual-consistency">Eventual Consistency</a>
+       section for details).</p>
+       
+    <p>Corduroy will accept any <code>dict</code>-like you pass and treat it as a document. The objects it
+       returns will by default use the <code>corduroy.Document</code> class (though this can be overridden). The
+       <code>Document</code> class inherits from <code>dict</code> and has two noticeable differences from the
+       stdlib model:</p>
+       <ol>
+         <li>It preserves the order of keys in dictionary objects (mimicing Erlang and Javascript behavior w/r/t
+             json serialization)</li>
+         <li>It allows you to refer to items in the dict as if they were attributes.</li>
+       </ol>
+    
+    <h2>Basic CRUD</h2>
+    <p>To fetch a single document, call the <code>Database</code> object’s <code>get</code> method with the 
+       desired <code>_id</code> string. The <code>Document</code> object it returns can be used just like a dictionary:
+    {{{doc_get}}}
+    {{#output}}<Document lackey-129[1] {first:"Oliver", last:"Reeder", office:"Richmond Terrace"}>
+Mr. Oliver Reeder can be found at Richmond Terrace.{{/output}}
+
+    <p>After making local changes, a new version of the document can be written to the db by calling the
+      <code>save</code> method:</p>
+    {{{doc_save}}}
+    {{#output}}<Document lackey-129[2] {first:"Oliver", last:"Reeder", education:"Oxbridge"}>{{/output}}
+    <p>Note that the number in brackets incremented as a result of the save. This number is the first portion
+       of the <code>_rev</code> value (the full value looks more like “<code>2-0348cd6cc49cb4cacdb9b94c87c83808</code>”).
+       The <code>_rev</code> will change on every successful update. Also notice that we ignored the return value since the 
+       <code>save</code> method updates its argument as a side effect.</p>
+    <p>To remove a document from the db, pass a current version of the doc to the <code>delete</code> method. 
+      If your argument’s <code>_rev</code> value doesn’t match the server copy, a conflict exception will 
+      be raised.</p>
+    {{{doc_delete}}}
+    
+    <p>To create a new document, <code>save</code> a dict with a valid <code>_id</code> string. Its <code>_rev</code>
+      will be set in the process:</p>
+    {{{doc_create}}}
+    {{#output}}1-d0a259b5b8e71a3c0b0bc7facbb690d5{{/output}}
+    <p>If you don’t specify an <code>_id</code>, one will be chosen for you. Corduroy keeps a cache of identifiers
+       collected from the couch server’s <code>_uuids</code> API. Relying on server-provided IDs can 
+       purportedly improve performance since the generated identifiers are semi-sequential in a way that
+       is friendly to b-tree traversal. I take no definite stance on this.</p>
+    {{{doc_create_anon}}}
+    {{#output}}6efcdf33df6c82bfc53d7416c660ef5a 1-967a00dff5e02add41819138abb3284d{{/output}}
+    
+    <h2>Batch CRUD</h2>
+    <p>Both the <code>get</code> and <code>save</code> methods can accept either a single value or a list
+       as the first argument. To fetch multiple documents in a single request, pass a list of ID strings. The
+       return value is a list of <code>Document</code> objects in the same order as the IDs list:</p>
+    {{{batch_get}}}
+    {{#output}}<Document ballentine[9] {first:"Claire", last:"Ballentine", highly_regarded:True}>{{/output}}
+      
+    <p>Whereas the single-doc <code>get</code> call will raise a <code>NotFound</code> exception should the 
+       requested doc not exist, a batch <code>get</code> flags missing documents by including a <code>None</code> at the 
+       corresponding element of the results list.</p>
+       
+    <p>To update multiple documents in a single request, pass your list of updated docs to <code>save</code>. To
+       delete one or more docs in the batch, add a <code>_deleted</code> key to each such doc before submitting 
+       the request:</p>
+    {{{batch_save}}
+    
+    <a name="eventual-consistency"></a>
+    <h1>Eventual Consistency</h1>
+    <p>One of the fundamental differences between CouchDB and traditional RDBMSs is the way data integrity and
+       transactional semantics are handled. The tl;dr version is that Couch abandons nearly all SQL-ish guarantees 
+       and pushes responsibility for conflict resolution to the client. </p>
+       
+    <p>This might sound like a mis-feature, but in the best <a href="http://arborjs.org/docs/worse-is-better">Worse-is-Better</a> 
+       tradition, the lack of abstraction over what-gets-written-when can force you to improve the way you
+       structure your code. This may just be stockholm syndrome talking, but there’s an argument to be made that
+       the client can do a better job of deciding how to deal with conflicts than a one-size-fits-all transaction
+       could.</p>
+
+    <h2>Couch’s Approach to MVCC</h2>
+
+    <p>Regardless of how they’re rationalized, update conflicts are a common enough occurrance when dealing
+       with documents that your code should generally consider them the norm rather than an exceptional
+       condition.</p>
+    
+    <p>The basic rule Couch uses to determine whether an update should succeed is quite simple: </p>
+    <blockquote>The new version of a doc must have the same <code>_rev</code> value as the copy currently 
+      in the database.</blockquote>
+
+    <p>To see how this on some level solves the entire problem of lost data consider the scenario where two
+       clients simultaneously download the same copy of a doc whose revision is currently <code>1</code>. Both 
+       clients will modify their local copy of the doc and attempt to save it back to the database.</p>
+       
+    <p>The first client to connect will succeed, since the <code>_rev</code> of its modified doc matches 
+       the value in the database. The server’s copy of the doc is then updated and its <code>_rev</code> is
+       incremented to <code>2</code>.</p>
+
+    <p>When the second client’s save attempt is handled, the client’s <code>_rev</code> (<code>1</code>) no longer matches
+       the server’s copy (now <code>2</code>). As a result the save will fail and raise a <code>Conflict</code>
+       exception.</p>
+         
+    <p>The second client must now fetch the newly updated doc from the server, re-apply its modifications, then
+       attempt the save again.</p>
+        
+    <h2>The Standard Recipe</h2>
+    <p>The end result of this <code>_rev</code>-matching rule is that any writes attempted by your code should 
+       use the following algorithm:</p>
+       <ol>
+        <li>Attempt the write.</li>
+        <li>If no conflict occurred, you’re done.</li>
+        <li>If there <em>was</em> a conflict, request the now-current copy of the doc.</li>
+        <li>At the very least, copy the <code>_rev</code> from the newly-retrieved copy of the doc to
+            your local copy. Ideally do something clever that merges the two docs without losing any edits.</li>
+        <li>Attempt a write of the merged doc and <code>GOTO 2</code></li>
+       </ol>
+
+    <p>It’s worth acknowledging that doing things ‘correctly’ is a fair amount of (fairly repetitive) work. Thus the 
+       temptation to perform blindfolded writes and just hope for the best can be dangerously strong.</p>
+    
+    <p>To try to make it easier to be responsible in this context, Corduroy treats every write as a potentially
+       conflict-inducing operation. In previous examples of the <code>save</code> method, the return value was
+       ignored. Let’s now take a look at the <code>ConflictResolution</code> object that <code>save</code> returns:
+    {{{resolution_success}}}
+    {{#output}}<Success: 2 docs updated>{{/output}}
+    {{{resolution_conflicts}}}
+    {{#output}}<Conflict: second>{{/output}}
+    <p>From the repr strings you can see whether the write was successful and the list of conflicted IDs if not.
+       To access this information from your code, the conflicts variable contains a pair of attributes to be
+       inspected:</p>  
+    <ul>
+      <li><code>pending</code>: A dictionary (keyed by <code>_id</code>) containing a reference to each doc whose
+          write attempt was unsuccessful.</li>
+      <li><code>resolved</code>: A dictionary of all the successfully written docs.</li>
+    </ul>
+    
+    <h2>Resolving Conflicts</h2>
+    <p>You <em>could</em> use the values in <code>pending</code> to plan a fetch request, merge the results with your
+       local edits, then resubmit them. But since this is such a common pattern, the <code>ConflictResolution</code>
+       object provides a method called <code>resolve</code> to handle all of this in one shot.</p>
+  
+    <p>Since all parts of the Standard Recipe are identical except for step 4 (merging the local and fetched copies
+       of the doc), Corduroy allows you to encapsulate your merge logic in a function and pass that to  
+       <code>resolve</code> which will orchestrate the required HTTP traffic.</p>
+    {{{resolution_merge}}}
+    {{#output}}pre-merge:  1
+post-merge: 0{{/output}}
+    
+    <p>The <code>ConflictsResolution</code> object fetches the current versions of all the <code>pending</code>
+       docs, then repeatedly calls your merge function with local and remote copies of each. The merge function 
+       should return a dictionary that merges the data in the divergent copies. These returned dictionaries will then
+       be sent to the server in a batch write attempt. If the merge function returns <code>None</code>, no attempt to
+       write that doc will be made.</p>
+    <p>When the <code>resolve</code> call completes, the <code>pending</code> and <code>resolved</code> dictionaries
+       will be updated to reflect the new state.</p>
+    
+    <h2>Anticipatory Conflict Handling</h2>
+    <p>The same merge functions that that the <code>resolve</code> method accepts can also be passed to the 
+       <code>Database.save</code> method directly. If any conflicts occur, a resolution will automatically be
+       attempted using your merge function.</p>
+    {{{resolution_before}}}
+    <p>Despite this particular merge function’s obvious unsuitability for use in production, a forced overwrite is 
+       ocasionally just the thing you need (especially during development). As a further shorthand, the above can be rewritten as:</p>
+    {{{resolution_with_force}}}
+    
+    <a name="views"></a>
+    <h1>Views</h1>
+    <p>Beyond accessing documents individually, Couch provides a mechanism for building named indexes called
+      ‘views’ that can aggregate data across documents. Views are defined by javascript functions on the server
+      that update the index every time a document is added or modified. From the client’s perspective they are a
+      series of ‘rows’ with three attributes:</p>
+      <ul>
+        <li><code>key</code>: A string or other json-serializable object (often a list)</li>
+        <li><code>id</code>: The <code>_id</code> of the document this row represents.</li>
+        <li><code>value</code>: An arbitrary value returned by the serverside function.</li>
+      </ul>
+    <p>The mapping of rows to documents is not one-to-one, so it’s quite possible for one doc to be represented
+       by multiple rows while another is omitted altogether.</p><p> Similarly, <code>key</code> values may be unique between rows but
+       often will not be. In fact one of the more useful properties of views is that multiple documents can be 
+       grouped together on the basis of having the same key.</p>
+    
+    <h2>Querying a View</h2>
+    <p>To retrieve all of the rows from a view, call the database object’s <code>view</code> method with
+       the ‘name’ of that view as an argument. Views are named according to the
+       <a href="http://guide.couchdb.org/draft/design.html">design documents</a> they live in, so for a view 
+       called <code>byname</code> in a design document called <code>_design/employees</code>, its ‘name’ 
+       would be "<code>employees/byname</code>". </p>
+    <p>The result of a call to <code>view</code> is an iterable list of <code>Row</code> objects. Here we
+       grab all of the rows from a view and begin printing them out:</p>
+    {{{query_simple}}}
+    {{#output}}<employees/byname: 17/17 rows>{{/output}}
+    {{{query_rowbits}}}
+    {{#output}}key:abbott   | id:emp-2c9792a3
+key:coverley | id:emp-fad5095d
+key:cullen   | id:emp-687e8224
+⋮
+key:reeder   | id:emp-c110c0a8
+{{/output}}
+    
+    <h2>Random Access Rows (and Docs)</h2>
+    <p>Since every row in a view has an associated key, you can selectively query the view only for rows matching
+       a particular value. For instance, to grab just the first row the query would be:</p>
+    {{{query_hugh}}}
+    <p>Queries with multiple keys are also possible:</p>
+    {{{query_few}}}
+    <p>Part of what makes this a useful feature is that the documents associated with rows can also be included
+       in the response. As a result, views can be used to define aliases to documents independent of their potentially
+       unwieldy <code>_id</code> values:</p>
+    {{{query_hugh_further}}}   
+    {{#output}}<Document emp-2c9792a3[5932] {first:"Hugh", last:"Abbott", locale:"Unknown"}>{{/output}}
+    
+    
+    <h2>Ranged Queries</h2>
+    <p>Since the rows in a view are sorted in ascending order based on their keys, you can also request all rows
+       within a range by specifying <code>startkey</code> and <code>endkey</code> values. To select all the “C”
+       names, the query wouldbe:</p>
+    {{{query_c_words}}}
+    {{#output}}[u"coverley", u"cullen"]{{/output}}
+    <p>If it’s not immediately apparent why the above query looks the way it does I highly recommend the 
+       CouchDB Guide’s <a href="http://guide.couchdb.org/draft/views.html">chapter</a> on the subject.</p>
+    
+    
+    <h2>Reductions</h2>
+    <p>For the most part views as described so far – an ordered set of key/id/value rows – provide all 
+       the data-access flexibility you need for reading out the state of your database. But Couch also
+       allows for a serverside pre-processing step to be associated with each view through the use of
+       a <code>reduce</code> function.</p>
+
+    <p>Couch’s semantics would seem to encourage using <code>reduce</code> as a 
+       way to create denormalized copies of your view data (e.g., creating a list of all the values for
+       a given key). But in practice this sort of usage is to be avoided due to an unfortunate trade-off 
+       in Couch’s b-tree-based internal design.</p>
+       
+    <p>Instead, <code>reduce</code> should be thought of as a way to convert rows into a handful
+       of numeric values – often only one. Accepting that limitation, it frequently makes sense to use one of
+       Couch’s <a href="http://wiki.apache.org/couchdb/Built-In_Reduce_Functions">built-in</a> reductions 
+       instead of writing your own. In combination with <a href="http://wiki.apache.org/couchdb/View_collation">View Collation</a> 
+       this becomes a surprisingly powerful technique.</p>
+    <p>Here is a view that uses the <code>_count</code> built-in reduction on rows keyed by the date.
+       Views with <code>reduce</code> functions will return the output of that reduction by default. The
+       pre-reduction rows can still be accessed with the query:
+       </p>
+    {{{query_no_reduce}}}
+    {{#output}}["2007","11","28"]
+["2007","11","29"]
+["2007","11","29"]
+⋮
+["2007","12","02"]{{/output}}
+
+    <p>The <code>group</code> and <code>group_level</code> keyword arguments allow you to control whether
+       the <code>reduce</code> function is applied uniformly to the rows (resulting in a single value), 
+       or to groupings based on shared key values.</p>
+    {{{query_reduce}}}
+    {{#output}}["2007","11","28"] → 1
+["2007","11","29"] → 17
+["2007","11","30"] → 3
+["2007","12","01"] → 92
+["2007","12","02"] → 50{{/output}}
+    {{{query_reduce_group}}}
+    {{#output}}["2007","11"] → 20
+["2007","12"] → 142{{/output}}
+    
+    <a name="data-formatters"></a>
+    <h1>Data Formatters</h1>
+    <p>Couch is not limited to presenting your documents and views as json-formatted text. It allows you to
+      define special handlers to transform the raw data into HTML, BibTeX, WAD or whatever is appropriate for 
+      your application.</p>
+    
+    <p>These custom formatters are defined in a design document specific to your database and are referred to
+      as ‘lists’ (which process the output of views) and ‘shows’ (which process the content of documents). Their client APIs are quite similar, 
+      in both cases you provide the name of the formatter along with the view or document it will be applied to.
+      In response an object is returned with two attributes of interest:</p>
+      <ul>
+        <li><code>headers</code>: A dictionary of response headers</li>
+        <li><code>body</code>: A bytestring (or decoded json object if a mime-type of <code>application/json</code> was
+          present in the headers)</li>
+      </ul>
+    
+    <h2>Formatting Documents with Shows</h2>
+    <p>‘Show’ functions are reuseable javascript routines that have access to a specified document as well
+      as any query arguments passed in the request. Here the function <code>csv</code> in the design doc
+      <code>records</code> is being used to format a document. The <code>include_titles</code> argument 
+      instructs this particular ‘show’ to output a header row in addition to the document data:</p>
+    {{{format_show}}}
+    {{#output}}text/csv{{/output}}
+    {{{format_show_more}}}
+    {{#output}}artist,title,review,doc_id
+Jeff Wayne,War of the Worlds,Stimulating,1978-wotw
+    {{/output}}
+    
+    <h2>Formatting Views with Lists</h2>
+    <p>‘List’ functions use similar syntax but apply to a view instead of a single document. In addition
+       to query arguments, the same slicing operations that apply to views can be included to filter out
+       selected rows before formatting:</p>
+    {{{format_list}}}
+    {{#output}}<ul><li>Nicola Murray</li><li>Newcastle</li><li>National Trust</li></ul>{{/output}}
+
+    <p>If your list function is general enough, you can apply it to other views as well; even views
+       in other design documents:</p>
+    {{{format_list_elsewhere}}}
+    {{#output}}<ul><li>Steve Fleming 13:00-13:07</li><li>Julius Nicholson 13:30–</li></ul>
+{{/output}}
+
+
+
+    <a name="replication"></a>
+    <h1>Replication</h1>
+    <p>Reliable, master-less <a href="http://wiki.apache.org/couchdb/Replication">replication</a> is one of Couch’s marquee features. A replication involves a source
+       and a target database and propagates changes from the former to the latter. To copy an existing database, 
+       pass the source and target database names (or urls) to a <code>Couch</code> object:</p>
+    {{{replicate}}}
+    
+    <p><code>Database</code> objects can also replicate themselves through their <code>push</code> and <code>pull</code>
+       methods. Their behavior is analogous to the eponymous commands used by distributed version control systems.
+       These operations are one-way in nature meaning a full synchronization of two databases (each with local edits) 
+       requires a reciprocal push and pull:</p>
+    {{{replicate_push}}}
+
+    <h2>Persistence</h2>
+    <p>In addition to one-off, ‘anonymous’ replications, Couch maintains a system-controlled database called <code><a href="http://www.couchbase.com/docs/couchdb-release-1.1/index.html">_replicator</a></code>
+       to track named replications over time. This database is exposed by the <code>Couch</code> object and behaves
+       like any other (supporting <code>get</code>, <code>save</code>, and friends).</p>
+    <p>The <code>_replicator</code> database has the special property that when docs of a certain form are created, 
+       they will trigger a new replication. Its ongoing status can then be monitored by polling the document:</p>
+    {{{replicator}}}
+    {{#output}}{
+  "_id":"local-to-remote",
+  "source":"localdb", 
+  "target":"http://elsewhere.com:5984/remotedb",
+  "continuous":true,
+  "_replication_id":  "c0ebe9256695ff083347cbf95f93e280",
+  "_replication_state":  "triggered",
+  "_replication_state_time":  1297974122
+} {{/output}}
+
+    <p>As a convenience, all of the replication methods accept a keyword argument called <code>_id</code>. If included,
+       a new document will be created in the <code>_replicator</code> database using the arguments for its fields. 
+       Thus the previous example could be rewritten as:</p>
+    {{{replicator_convenience}}}
+    <p>Or if you want to get fancy:</p>
+    {{{replicator_star}}}
+    
+    <a name="change-notifications"></a>
+    <h1>Change Notifications</h1>
+    <p>At the filesystem level, a couch database is stored as something more akin to a journal file than a snapshot
+       of the current state. Every document modification is appended to this journal and the ‘live’ database can be
+       thought of as the result of playing back all these modification records in order.</p>
+    <p>Beyond being just an implementational detail, this alternative method of representing a database (as a sequence
+       of changesets) is exposed through the <code><a href="http://wiki.apache.org/couchdb/HTTP_database_API#Changes">_changes</a></code> 
+       API. Your application code can make use of this data in two main ways:</p>
+    <ol>
+      <li>retrieving a list of changes since a known timepoint (a ‘seq’ value).</li>
+      <li>subscribing to an asynchronous feed in which a user-provided callback is fired in realtime coincident with changes to the db.</li>
+    </ol>
+    <p>The former can be useful for reinventing differently-sized wheels (see also <a href="#replication">Replication</a>), 
+       while the latter can be used to trigger scripted events such as cache invalidation or summary statistics generation.</p>
+    <p>When requesting a list of changes, you can either specify no arguments (in which case somewhere between 0 and <code>update_seq</code>
+      change records will be returned), or you can bracket the time period in order to limit the response size:</p>
+    {{{changes_seq}}}
+    {{#output}}11519{{/output}}
+    {{{changes_everything}}}
+    {{#output}}seq: 11519 (210 changes){{/output}}
+    <p></p>
+    {{{changes_bracket}}}
+    {{#output}}seq: 11506 (5 changes){{/output}}
+    <p>Each element of the <code>changes.results</code> list corresponds to a document and contains a delta relative
+       to its previous state. For all the details see the CouchDB Book’s <a href="http://guide.couchdb.org/draft/notifications.html#polling">chapter</a> on the subject.</p>
+    
+    
+    <h2>Asynchronous Feeds</h2>
+    <p>Changes can also be accessed as a ‘feed’ in which an HTTP connection is left open and Couch will write 
+       individual change notifications to it as they occur. To listen for changes in this manner, request a 
+       continous feed and pass an explicit callback (i.e., do <em>not</em> call <code>yield</code> this time):</p>
+    {{{changes_feed}}}
+    <p>The return value of a feed request is a <code>ChangesFeed</code> object. It will keep the connection alive
+       and handles the invocation of your callback at regular intervals (see the <code a="#">latency</code> parameter).
+       The feed will continue listening until it is explicitly stopped:</p>
+    {{{changes_stop}}}
+    
+
+    <a name="further-reading"></a>
+    <h1>Further Reading</h1>
+    <p>The overall documentation scene for Couch isn’t quite as focused as it could be. There’s quite a bit of 
+      good infomation out there, but it’s scattered all over the net. Here are some I’ve found useful:</p>
+    <ul>
+      <li><a href="http://guide.couchdb.org/">The O’Reilly Book</a> – Somewhat dated at this point but mostly in terms
+        of missing features (i.e., it won’t lead you astray recommending deprecated approaches or the like).</li>
+        
+      <li><a href="http://www.couchbase.com/docs/couchdb-release-1.1/index.html">CouchDB 1.1 Release Notes</a> – Written
+        by CouchBase before they pivoted away from using Apache CouchDB. This details most of the changes not covered 
+        in the book.</li>
+
+      <li><a href="http://wiki.apache.org/couchdb">The CouchDB Wiki</a> – Less holistic than the book, but more
+          up to date. In particular take a look at the <a href="http://wiki.apache.org/couchdb/Reference">Reference</a> section.</li>
+          
+      <li><a href="http://blog.mudynamics.com/wp-content/uploads/2009/04/icouch.html">Interactive CouchDB</a> – Click
+        on the Map/Reduce tab then say ‘eureka, views make sense now’ about 5 minutes later.</li>
+    </ul>
+    </div> <!-- .guide -->
+  </div> <!-- #container -->
+  
+
+
+  <script src="{{root}}_/js/jquery.min.js" charset="utf-8"></script>
+  <script src="{{root}}_/js/corduroy.js" charset="utf-8"></script>
+</body>
+</html>
+
+
+
+
+
+
+

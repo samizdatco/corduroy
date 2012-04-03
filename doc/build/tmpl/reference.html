@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Corduroy: Reference</title>
+	<meta name="generator" content="TextMate http://macromates.com/">
+	<meta name="author" content="Christian Swinehart">
+	
+	<link rel="stylesheet" href="{{root}}_/css/cords.css" type="text/css" charset="utf-8">
+	<!-- Date: 2012/03/05 -->
+</head>
+<body>
+  <div id="masthead">
+    <img src="{{root}}_/css/logo.png" usemap="#imap" />
+    <map name="imap"><area shape="rect" coords="0,30,250,85" href="{{readme}}" /></map>
+  </div>
+  
+  <div id="container">
+    <div class="nav">
+      <div class="home"><a href="{{readme}}">Corduroy.py</a></div>
+      <div class="controls">
+        <h1>Guide</h1>
+        <ul>
+          <li><a href="{{guide}}#hello-tornado">Hello Tornado</a></li>
+          <li><a href="{{guide}}#conventions">Conventions</a></li>
+          <li><a href="{{guide}}#couches-and-databases">Couches &amp; Databases</a></li>
+          <li><a href="{{guide}}#documents">Documents</a></li>
+          <li><a href="{{guide}}#eventual-consistency">Eventual Consistency</a></li>
+          <li><a href="{{guide}}#views">Views</a></li>
+          <li><a href="{{guide}}#data-formatters">Data Formatters</a></li>
+          <li><a href="{{guide}}#replication">Replication</a></li>
+          <li><a href="{{guide}}#change-notifications">Change Notifications</a></li>
+          <li><a href="{{guide}}#further-reading">Further Reading</a></li>
+        </ul><br/>
+      
+        <h1>Reference</h1>
+        <ul>
+          <li><a href="#Couch">Couch</a></li>
+          <li><a href="#Database">Database</a></li>
+          <li><a href="#View">View</a></li>
+          <li><a href="#Row">Row</a></li>
+          <li><a href="#Document">Document</a></li>
+          <li><a href="#Status">Status</a></li>
+          <li><a href="#ChangesFeed">ChangesFeed</a></li>
+          <li><a href="#ConflictResolution">ConflictResolution</a></li>
+          <li><a href="#@relax">@relax</a></li>
+          <li><a href="#Exceptions">Exceptions</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="reference">
+
+      {{#modules}}
+      <div class="module">
+        {{#classes}}
+        
+        <div class="api-class">
+          <h1><div class="prefix">corduroy.</div><a name="{{classname}}">{{classname}}</a></h1>
+          {{#intro}}<p>{{graf}}</p>{{/intro}}
+          <div class="params">
+            {{#sections}}
+            <h3>{{name}}</h3>
+            <ul>
+              {{#params}}{{{doc}}}{{/params}}
+            </ul>
+            {{/sections}}
+          </div>
+
+          <ul>
+            {{#methods}}
+            <a name="{{hash}}"></a>
+            <li class="method">
+              <a href="#{{hash}}"><span class="method-name">{{name}}</span> <span class="args">{{{args}}}</span></a>
+              {{#about}}<p>{{par}}</p>{{/about}}
+              <div class="params">
+                {{#sections}}
+                <h3>{{name}}</h3>
+                <ul>
+                  {{#params}}{{{doc}}}{{/params}}
+                </ul>
+                {{/sections}}
+              </div>
+            </li>
+          {{/methods}}
+          </ul>
+        </div>
+        {{/classes}}
+      </div>
+    {{/modules}}
+    <div class="module">
+      <a name="Exceptions"></a>
+      <div class="api-class">
+        <h1>Exceptions</h1>
+          <p>Everything that can go wrong…</p>
+          <p>Couch gives quite a bit of feedback through numeric HTTP error codes. These exceptions
+             give less-unweildy names to some of the more common ones:</p>
+
+          <div class="params">
+            <h3>HTTPError</h3>
+            <ul><li>Base class for all exceptions with HTTP status codes >= 400.</li></ul><br />
+
+            <h3>NotFound</h3>
+            <ul><li>Raised when a 404 error occurs.</li></ul><br />
+
+            <h3>Conflict</h3>
+            <ul><li>Raised when a 409 error occurs.</li></ul><br />
+
+            <h3>PreconditionFailed</h3>
+            <ul><li>Raised when a 412 error occurs.</li></ul><br />
+
+            <h3>ServerError</h3>
+            <ul><li>Raised when an HTTP status code >=500 occurs.</li></ul><br />
+          </div>        
+        
+      </div>
+    </div>
+
+
+  </div>
+
+  <script src="{{root}}_/js/jquery.min.js" charset="utf-8"></script>
+  <script src="{{root}}_/js/corduroy.js" charset="utf-8"></script>
+</body>
+</html>

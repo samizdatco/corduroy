@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Corduroy</title>
+	<meta name="generator" content="TextMate http://macromates.com/">
+	<meta name="author" content="Christian Swinehart">
+	
+	<link rel="stylesheet" href="{{root}}_/css/cords.css" type="text/css" charset="utf-8">
+	<!-- Date: 2012/03/04 -->
+</head>
+<body>
+  <div id="masthead">
+    <img src="{{root}}_/css/logo.png" />
+  </div>
+  
+  <div id="container">
+    <div class="nav">
+      <div class="home"><a href="{{readme}}">Corduroy.py</a></div>
+      <div class="controls">
+        <h1>Guide</h1>
+        <ul>
+          <li><a href="{{guide}}#hello-tornado">Hello Tornado</a></li>
+          <li><a href="{{guide}}#conventions">Conventions</a></li>
+          <li><a href="{{guide}}#couches-and-databases">Couches &amp; Databases</a></li>
+          <li><a href="{{guide}}#documents">Documents</a></li>
+          <li><a href="{{guide}}#eventual-consistency">Eventual Consistency</a></li>
+          <li><a href="{{guide}}#views">Views</a></li>
+          <li><a href="{{guide}}#data-formatters">Data Formatters</a></li>
+          <li><a href="{{guide}}#replication">Replication</a></li>
+          <li><a href="{{guide}}#change-notifications">Change Notifications</a></li>
+          <li><a href="{{guide}}#further-reading">Further Reading</a></li>
+        </ul><br/>
+        <h1>Reference</h1>
+        <ul>
+          <li><a href="{{ref}}#Couch">Couch</a></li>
+          <li><a href="{{ref}}#Database">Database</a></li>
+          <li><a href="{{ref}}#View">View</a></li>
+          <li><a href="{{ref}}#Row">Row</a></li>
+          <li><a href="{{ref}}#Document">Document</a></li>
+          <li><a href="{{ref}}#Status">Status</a></li>
+          <li><a href="{{ref}}#ChangesFeed">ChangesFeed</a></li>
+          <li><a href="{{ref}}#ConflictResolution">ConflictResolution</a></li>
+          <li><a href="{{ref}}#@relax">@relax</a></li>
+          <li><a href="{{ref}}#Exceptions">Exceptions</a></li>
+        </ul>
+      </div>    
+    </div>
+    <div class="guide">
+      <h1>About</h1>
+      <p>Corduroy provides a python-friendly wrapper around CouchDB’s HTTP-based API. Behind the scenes it 
+         hooks into the asynchronous i/o routines from your choice of <a href="http://www.tornadoweb.org/">Tornado</a> or the
+         <a href="http://docs.python-requests.org">Requests</a> &amp; <a href="http://gevent.org/">Gevent</a> 
+         modules.</p>
+
+      <p>Using corduroy you can query the database without blocking your server’s event
+         loop, making it ideal for <a href="http://couchapp.org/page/index">CouchApp</a> 
+         micro-middleware or scripted batch operations.</p>
+
+      <h1>Usage</h1>
+      <p>As a real world(ish) example of working with 
+         Corduroy, consider this pair of Tornado event handlers which update a url-specifed document then query a view. 
+         The first uses explicit callbacks to resume execution after each response from the database is received:</p>
+      {{{why_jumpy}}}
+      
+      <p>An alternative syntax is available (when using Tornado) through the use of the <code>@relax</code> 
+        decorator. Instead of defining callbacks for each database operation, the library can be called as
+        part of a <code>yield</code> expression. 
+        </p>
+      <p>Tornado’s <a href="http://www.tornadoweb.org/documentation/gen.html">generator</a>
+        module will intercept these <code>yield</code>s and provide a callback automatically. The result 
+        is code that looks quite sequential but will still execute asyncronously:
+        </p>
+      {{{why_relax}}}
+      
+      <p>For a gentle introduction to Corduroy (and CouchDB in general), take a look at the <a href="{{guide}}">Guide</a>. Documentation
+         for all of Corduroy’s module-level classes can be found in the <a href="{{ref}}">Reference</a> section.</p>
+        
+      
+      <h1>Installation</h1>
+      <h2>Automatic Installation</h2>
+      <p>Corduroy can be found on <a href="http://pypi.python.org/pypi/corduroy">PyPi</a> and can be installed
+        with your choice of <code>pip</code> or <code>easy_install</code>.</p>
+      <h2>Manual Installation</h2>
+      <p>Download <a href="http://samizdat.cc/corduroy/dist/corduroy-0.9.0.tar.gz">corduroy-0.9.0.tar.gz</a>.</p>
+      <div class="sample"><pre>tar xvzf corduroy-0.9.0.tar.gz
+cd corduroy-0.9.0
+python setup.py install</pre></div>
+
+      <h2>Dependencies</h2>
+      <p>If you’re writing a Tornado app, Corduroy can use its pure-python HTTP client by installing with:</p>
+      <div class="sample"><pre>pip install corduroy tornado</pre></div>
+
+      <p>Or if you’d prefer the libcurl-based client (which supports pooling and other niceties), use:</p>
+      <div class="sample"><pre>pip install corduroy tornado pycurl</pre></div>
+      <p>If pycurl complains (I’m looking at you, OS X), try:</p>
+      <div class="sample"><pre>env ARCHFLAGS="-arch x86_64" pip install pycurl</pre></div>
+
+      <p>Gevent users can install with:</p>
+      <div class="sample"><pre>pip install corduroy requests gevent</pre></div>
+
+      <p>The library can also be used with plain-old blocking i/o:</p>
+      <div class="sample"><pre>pip install corduroy requests</pre></div>
+      
+
+      <h1>License</h1>
+      <p>Corduroy is released under the BSD license. Use it freely and in good health.</p>
+
+      <h1>Acknowledgments</h1>
+      <p>Corduroy is derived from Christopher Lenz’s excellent <a href="http://code.google.com/p/couchdb-python">couchdb-python</a> 
+         module and inherits much of its API (and most of its test cases) from that codebase. It is also
+         indebted to Eric Naeseth’s mind-expanding <a href="http://code.naeseth.com/swirl/">Swirl</a> library 
+         which first acquainted me with the idea of using generators to simulate sequential code.</p>
+
+    </div> <!-- .guide -->
+  </div> <!-- #container -->
+  
+
+
+  <script src="{{root}}_/js/jquery.min.js" charset="utf-8"></script>
+  <script src="{{root}}_/js/corduroy.js" charset="utf-8"></script>
+</body>
+</html>
+
+
+
+
+
+
+
