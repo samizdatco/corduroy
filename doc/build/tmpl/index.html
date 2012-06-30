@@ -49,7 +49,7 @@
     </div>
     <div class="guide">
       <h1>About</h1>
-      <p>Corduroy provides a python-friendly wrapper around CouchDB’s HTTP-based API. Behind the scenes it 
+      <p>Corduroy provides a python-friendly wrapper around <a href="http://couchdb.apache.org/">CouchDB</a>’s HTTP-based API. Behind the scenes it 
          hooks into the asynchronous i/o routines from your choice of <a href="http://www.tornadoweb.org/">Tornado</a> or the
          <a href="http://docs.python-requests.org">Requests</a> &amp; <a href="http://gevent.org/">Gevent</a> 
          modules.</p>
@@ -70,7 +70,7 @@
         </p>
       <p>Tornado’s <a href="http://www.tornadoweb.org/documentation/gen.html">generator</a>
         module will intercept these <code>yield</code>s and provide a callback automatically. The result 
-        is code that looks quite sequential but will still execute asyncronously:
+        is code that looks quite sequential but will still execute asynchronously:
         </p>
       {{{why_relax}}}
       
@@ -83,9 +83,10 @@
       <p>Corduroy can be found on <a href="http://pypi.python.org/pypi/corduroy">PyPi</a> and can be installed
         with your choice of <code>pip</code> or <code>easy_install</code>.</p>
       <h2>Manual Installation</h2>
-      <p>Download <a href="http://samizdat.cc/corduroy/dist/corduroy-0.9.0.tar.gz">corduroy-0.9.0.tar.gz</a>.</p>
-      <div class="sample"><pre>tar xvzf corduroy-0.9.0.tar.gz
-cd corduroy-0.9.0
+      <p>Download <a href="http://samizdat.cc/corduroy/dist/corduroy-{{version}}.tar.gz">corduroy-{{version}}.tar.gz</a> or clone
+        the <a href="https://github.com/samizdatco/corduroy">repository</a>.</p>
+      <div class="sample"><pre>tar xzf corduroy-{{version}}.tar.gz
+cd corduroy-{{version}}
 python setup.py install</pre></div>
 
       <h2>Dependencies</h2>

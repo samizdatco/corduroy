@@ -7,10 +7,10 @@ Corduroy · asynchronous upholstery
 About
 =====
 
-Corduroy provides a python-friendly wrapper around CouchDB’s HTTP-based API.
-Behind the scenes it hooks into the asynchronous i/o routines from your choice
-of `Tornado <http://www.tornadoweb.org/>`_ or the 
-`Requests <http://docs.python-requests.org/>`_ & `Gevent <http://gevent.org/>`_ modules.
+Corduroy provides a Python-friendly wrapper around `CouchDB <http://couchdb.apache.org/>`_’s 
+HTTP-based API. Behind the scenes it hooks into the asynchronous i/o routines from your choice
+of `Tornado <http://www.tornadoweb.org/>`_ or the `Requests <http://docs.python-requests.org/>`_ 
+& `Gevent <http://gevent.org/>`_ modules.
 
 Using corduroy you can query the database without blocking your server’s event
 loop, making it ideal for `CouchApp <http://couchapp.org/page/index>`_ micro-middleware 
@@ -49,7 +49,7 @@ the library can be called as part of a yield expression.
 
 Tornado’s `generator <http://www.tornadoweb.org/documentation/gen.html>`_ module 
 will intercept these yields and provide a callback automatically. The result is 
-code that looks quite sequential but will still execute asyncronously::
+code that looks quite sequential but will still execute asynchronously::
 
     class RankingsUpdater(tornado.web.RequestHandler):
         @relax
@@ -81,10 +81,11 @@ easy_install.
 Manual Installation
 -------------------
 
-Download `corduroy-0.9.0.tar.gz <http://samizdat.cc/corduroy/dist/corduroy-0.9.0.tar.gz>`_::
+Download `corduroy-0.9.1.tar.gz <http://samizdat.cc/corduroy/dist/corduroy-0.9.1.tar.gz>`_
+or clone the `repository <https://github.com/samizdatco/corduroy>`_::
 
-    tar xvzf corduroy-0.9.0.tar.gz
-    cd corduroy-0.9.0
+    tar xzf corduroy-0.9.1.tar.gz
+    cd corduroy-0.9.1
     python setup.py install
 
 Dependencies

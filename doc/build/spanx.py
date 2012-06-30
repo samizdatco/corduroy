@@ -30,74 +30,76 @@ from corduroy import *
 from corduroy.atoms import *
 from corduroy.io import *
 from corduroy.exceptions import *
+from corduroy import __version__ as VERSION
 from pygments.lexers import PythonLexer
 
-def redent(txt):
-    if u'\n' in txt:
-        first,rest = txt.split(u'\n',1)
-        return u'"%s\n%s"'%(first,dedent(rest))
-    return txt
-    
-
 re_section = re.compile(r'^ *((?:[A-Z][a-z]+ ?)+): *$')
-def meth_info(docstring):
-    docstr = redent(docstring).strip('"')
 
-    sections = odict(frontmatter=[])
-    sect = u'frontmatter'
-    for line in docstr.split('\n'):
-        m = re_section.search(line)
-        if m:
-            sect = m.group(1)
-            sections[sect] = []
-        else:
-            sections[sect].append(line)
-    
-    meth = dict(about=[], sections=[])
-    for sect, lines in sections.items():
-        if sect=='frontmatter':
-            meth['about'] = [dict(par=graf.strip()) for graf in re.split(r'\n[ ]*\n', "\n".join(lines))]
-        else:
-            section = dict(name=sect, params=[])
-            for line in re.split(r'\n[ ]*\n', dedent("\n".join(lines))):
-                m = re.match(r'(.*?) \((.*?)\): (.*)$', line, re.S)
-                if m:
-                    param, typ, doc = m.groups()
-                    # section['params'].append({"param":param, "type":typ, "doc":doc.strip()})
-                    # doc = markdown(doc)
-                    # blob = "<span class='param'>%s</span> (<em>%s</em>): %s"%(param, typ, doc)
-                    section['params'].append({"doc":"<li class='dedent'><span class='param'>%s</span> (<em>%s</em>): %s</li>"%(param, typ, doc)})
-                    # if 'stale' in param:
-                    #     tron()
-                    # section['params'].append({"doc":"<li>%s</li>"%markdown(blob)})
-                else:
-                    section['params'].append({"doc":"<li>%s</li>"%line.strip()})
-            meth['sections'].append(section)
-                
-    return meth
-
-def meth_signature(fn):
-    try:
-        argspec = inspect.getargspec(fn)
-        if argspec[0]:
-            del argspec[0][0]
-        
-        args = []
-        for a in (inspect.formatargspec(*argspec)[1:-1]).split(', '):
-            bits = a.split('=')
-            if len(bits)==2:
-                args.append('%s=<code>%s</code>'%(bits[0],bits[1]))
-            else:
-                args.append(a)
-            
-        args = '(%s)'%(", ".join(args))
-
-    except TypeError:
-        args = u'<span class="no-args">‹property›</span>'
-    
-    return args
     
 def spanx(cls):
+    def redent(txt):
+        if u'\n' in txt:
+            first,rest = txt.split(u'\n',1)
+            return u'"%s\n%s"'%(first,dedent(rest))
+        return txt
+    
+    def meth_info(docstring):
+        docstr = redent(docstring).strip('"')
+
+        sections = odict(frontmatter=[])
+        sect = u'frontmatter'
+        for line in docstr.split('\n'):
+            m = re_section.search(line)
+            if m:
+                sect = m.group(1)
+                sections[sect] = []
+            else:
+                sections[sect].append(line)
+    
+        meth = dict(about=[], sections=[])
+        for sect, lines in sections.items():
+            if sect=='frontmatter':
+                meth['about'] = [dict(par=graf.strip()) for graf in re.split(r'\n[ ]*\n', "\n".join(lines))]
+            else:
+                section = dict(name=sect, params=[])
+                for line in re.split(r'\n[ ]*\n', dedent("\n".join(lines))):
+                    m = re.match(r'(.*?) \((.*?)\): (.*)$', line, re.S)
+                    if m:
+                        param, typ, doc = m.groups()
+                        # section['params'].append({"param":param, "type":typ, "doc":doc.strip()})
+                        # doc = markdown(doc)
+                        # blob = "<span class='param'>%s</span> (<em>%s</em>): %s"%(param, typ, doc)
+                        section['params'].append({"doc":"<li class='dedent'><span class='param'>%s</span> (<em>%s</em>): %s</li>"%(param, typ, doc)})
+                        # if 'stale' in param:
+                        #     tron()
+                        # section['params'].append({"doc":"<li>%s</li>"%markdown(blob)})
+                    else:
+                        section['params'].append({"doc":"<li>%s</li>"%line.strip()})
+                meth['sections'].append(section)
+                
+        return meth
+
+    def meth_signature(fn):
+        try:
+            argspec = inspect.getargspec(fn)
+            if argspec[0]:
+                del argspec[0][0]
+        
+            args = []
+            for a in (inspect.formatargspec(*argspec)[1:-1]).split(', '):
+                bits = a.split('=')
+                if len(bits)==2:
+                    args.append('%s=<code>%s</code>'%(bits[0],bits[1]))
+                else:
+                    args.append(a)
+            
+            args = '(%s)'%(", ".join(args))
+
+        except TypeError:
+            args = u'<span class="no-args">‹property›</span>'
+    
+        return args
+
     clsdoc = dict(classname=cls.__name__, intro=[], methods=[])
     if cls.__name__=='relax':
         clsdoc['classname'] = u"@relax"
@@ -132,6 +134,7 @@ def makemain(paths):
 
     tmpl = file('%s/tmpl/index.html'%py_root).read().decode('utf8')
     examples['output'] = _output
+    examples['version'] = VERSION
     examples.update(paths)
     html = pystache.render(tmpl, examples)
     fn = 'index.html' if paths['root'] else 'readme.html'
@@ -144,6 +147,7 @@ def makeguide(paths):
 
     tmpl = file('%s/tmpl/guide.html'%py_root).read().decode('utf8')
     examples['output'] = _output
+    examples['version'] = VERSION
     examples.update(paths)
     html = pystache.render(tmpl, examples)
     
@@ -170,6 +174,7 @@ def makeref(paths):
             module['classes'][-1]['module'] = mod.lower()
     info = dict(modules=modules)
     info.update(paths)
+    info['version'] = VERSION
     
     tmpl = file('%s/tmpl/reference.html'%py_root).read().decode('utf8')
     html = pystache.render(tmpl, info)
